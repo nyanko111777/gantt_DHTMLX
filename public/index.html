@@ -48,13 +48,19 @@
 <script type="text/javascript">
 
 	// 左側欄の設定
+
+	var textEditor = {type: "text", map_to: "text"};
+	// var dateEditor = {type: "date", map_to: "start_date", min: new Date(2018, 0, 1), max: new Date(2019, 0, 1)};
+	var durationEditor = {type: "number", map_to: "duration", min:0, max: 100};
+	// var priority = {type: "select", map_to: "priority", options:gantt.serverList("priority")};
+
 	gantt.config.columns=[
-		{name:"text",       label:"Task name",  resize:true, tree:true, width: 300},
-		{name:"start_date", label:"Start time",resize:true, align: "center", width: 71 },
-		{name:"duration",   label:"Duration",  resize:true, align: "center", width: 50 },
+		{name:"text",       label:"Task name",  tree:true, width: 300, editor: textEditor},
+		{name:"start_date", label:"Start time", align: "center", width: 71 },
+		{name:"duration",   label:"Duration",  align: "center", width: 50 , editor: durationEditor},
 		{name:"add",        label:"" , width: 40 }
 	];
-
+	
 	// タスクのバーの右側のテキスト設定
 	gantt.templates.rightside_text = function(start, end, task){
     return task.text + " " + task.duration + "<b>日</b>";};
@@ -64,16 +70,17 @@
 		levels: [
 			{
 				name:"day",
-				scale_height: 27,
-				min_column_width:40,
+				scale_height: 35,
+				min_column_width:18,
 				scales:[
-					{unit: "day", step: 1, format: "%d %M"}
+					{unit: "month", format: "%F, %Y"},
+					{unit: "day", step: 1, format: "%j"}
 				]
 			},
 			{
 				name:"week",
 				scale_height: 50,
-				min_column_width:45,
+				min_column_width:30,
 				scales:[
 					{unit: "week", step: 1, format: function (date) {
 						var dateToStr = gantt.date.date_to_str("%d %M");
@@ -83,12 +90,13 @@
 						// return dateToStr(date) + " - " + dateToStr(endDate);
 					}},
 					// {unit: "day", step: 1, format: "%j"}
-					{unit: "day", step: 1, format: "%j %D"}
+					{unit: "day", step: 1, format: "%j"},
+					{unit: "day", step: 1, format: "%D"}
 				]
 			},
 			{
 				name:"month",
-				scale_height: 75,
+				scale_height: 50,
 				min_column_width:20,
 				scales:[
 					{unit: "month", format: "%F, %Y"},
@@ -99,24 +107,27 @@
 			{
 				name:"quarter",
 				height: 50,
-				min_column_width:90,
+				min_column_width:30,
 				scales:[
-					{unit: "month", step: 1, format: "%M"},
+					// {unit: "month", step: 1, format: "%M"},
+					{unit: "month", format: "%F, %Y"},
 					{
 						unit: "quarter", step: 1, format: function (date) {
 							var dateToStr = gantt.date.date_to_str("%M");
 							var endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
 							return dateToStr(date) + " - " + dateToStr(endDate);
 						}
-					}
+					},
+					{unit: "week", format: "#%W"},
 				]
 			},
 			{
 				name:"year",
 				scale_height: 50,
-				min_column_width: 30,
+				min_column_width: 60,
 				scales:[
-					{unit: "year", step: 1, format: "%Y"}
+					{unit: "year", step: 1, format: "%Y"},
+					{unit: "month", format: "%F"},
 				]
 			}
 		]
@@ -149,6 +160,30 @@
 	gantt.config.date_format="%Y-%m-%d %H:%i";
 
 	gantt.init("gantt_here");
+
+
+	// スクロール
+	var scroll_state, click, original_mouse_position;
+	var timeline_area = document.getElementsByClassName("gantt_task_bg")[0]
+	
+
+	timeline_area.onmousedown = function(event){
+		click = true;
+		scroll_state = gantt.getScrollState().x;
+		original_mouse_position = event.clientX;
+	}
+
+
+	window.onmouseup = function(event){
+		click = false;
+	}
+
+	gantt.attachEvent("onMouseMove", function (id, e){
+		var scroll_value = scroll_state + original_mouse_position - e.clientX
+		if (click) { gantt.scrollTo(scroll_value, null);
+		}
+	});
+
 
 	// ローカルストレージの利用
 	var initialData = {

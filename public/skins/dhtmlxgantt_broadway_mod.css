@@ -854,7 +854,8 @@ div.dhx_modal_cover {
 
 .gantt_task_content {
     font-size: 12px;
-    color: rgb(0, 0, 0);
+    color: rgba(0, 0, 0, 0);
+    /* color: rgb(0, 0, 0); */
     width: 100%;
     top: 0;
     cursor: pointer;

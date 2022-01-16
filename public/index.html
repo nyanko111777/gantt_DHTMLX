@@ -16,35 +16,61 @@
 			margin:0px;
 			overflow: hidden;
 		}
+		/* 休日 */
+		.gantt_task_cell.week_end {
+			background-color: #e3ecf9;
+		}
+		.gantt_task_row.gantt_selected .gantt_task_cell.week_end {
+			background-color: #e3ecf9;
+		}
 		/* 色分け */
-		.high {
-			border: 2px solid #d96c49;
-			color: #d96c49;
-			background: #d96c49;
+		.pro {
+			border: 2px solid #f6e789;
+			color: #f9f4d2;
+			background: #f6f2d8;
 		}
 
-		.high .gantt_task_progress {
-			background: #db2536;
+		.pro .gantt_task_progress {
+			background: #ffd1a4;
+			height: 80%;
 		}
 
-		.medium {
+		.pro .gantt_side_content {
+			color: rgba(0, 0, 0, 0);
+		}
+
+		.pro .gantt_task_content {
+			font-size: 14px;
+			color: rgb(137, 132, 6);
+			width: 100%;
+			top: 0;
+			cursor: pointer;
+			position: absolute;
+			white-space: nowrap;
+			text-align: center
+		}
+
+		.ms {
 			border: 2px solid #34c461;
 			color: #34c461;
 			background: #34c461;
+			border-radius: 100%;
 		}
 
-		.medium .gantt_task_progress {
+		.ms .gantt_task_progress {
 			background: #23964d;
+			height: 80%;
 		}
 
-		.low {
+		.task {
 			border: 2px solid #6ba8e3;
 			color: #6ba8e3;
 			background: #6ba8e3;
 		}
 
-		.low .gantt_task_progress {
+		.task .gantt_task_progress {
 			background: #547dab;
+			height: 80%;
 		}
 	</style>
 	<link rel="shortcut icon" href="">
@@ -54,16 +80,13 @@
 
 <!-- フォーム -->
 <form class="gantt_control">
+	<!-- 展開と縮める -->
+	<input type="button" value="open all" onclick="window.openAll()" >
+	<input type="button" value="close all" onclick="window.closeAll()">
 
 	<!-- ズーム用 -->
-	<!-- <input type="button" value="Zoom In" onclick="zoomIn()">
-	<input type="button" value="Zoom Out" onclick="zoomOut()"> -->
-
 	<input type="radio" id="scale1" class="gantt_radio" name="scale" value="day">
 	<label for="scale1">Day scale</label>
-
-	<!-- <input type="radio" id="scale2" class="gantt_radio" name="scale" value="week">
-	<label for="scale2">Week scale</label> -->
 
 	<input type="radio" id="scale3" class="gantt_radio" name="scale" value="month" checked>
 	<label for="scale3">Month scale</label>
@@ -80,15 +103,70 @@
 <!-- <div id="gantt_here" style="width: 100%; height: 100vh;"></div> -->
 
 <script type="text/javascript">
+	// 展開、縮める
+	window.closeAll = function closeAll(){
+		gantt.eachTask(function(task){
+			task.$open = false;
+		});
+		gantt.render();
+		}
+		
+	window.openAll = function openAll(){
+		gantt.eachTask(function(task){
+			task.$open = true;
+		});
+		gantt.render();
+	}
 
+	gantt.attachEvent("onTaskLoading", function(task){
+		task.$open = true;
+		return true;
+	});
+
+	// 休日
+	var holidays = [//USA, DC holidays
+		new Date(2022, 0, 3),
+		new Date(2022, 0, 21),
+		new Date(2022, 3, 16),
+		new Date(2022, 4, 12),
+		new Date(2022, 4, 27),
+		new Date(2022, 5, 16),
+		new Date(2022, 6, 4),
+		new Date(2022, 8, 2),
+		new Date(2022, 9, 14),
+		new Date(2022, 10, 28),
+		new Date(2022, 11, 25)
+	];
+
+	for (var i = 0; i < holidays.length; i++) {
+		gantt.setWorkTime({
+			date: holidays[i],
+			hours: false
+		});
+	}
+
+	// 週末
+	gantt.config.work_time = true; 
+	var weekScaleTemplate = function (date) {
+		var dateToStr = gantt.date.date_to_str("%d %M");
+		var weekNum = gantt.date.date_to_str("(week %W)");
+		var endDate = gantt.date.add(gantt.date.add(date, 1, "week"), -1, "day");
+		return dateToStr(date) + " - " + dateToStr(endDate) + " " + weekNum(date);
+	};
+	gantt.templates.timeline_cell_class = function (task, date) {
+		if (!gantt.isWorkTime(date))
+			return "week_end";
+		return "";
+	};
 	// プラグイン
 	gantt.plugins({
 		keyboard_navigation: true,
 		undo: true,
-		marker: true 
+		marker: true,
+		// multiselect: true
 	});
 
-	// 現在の線
+	// nowの線
 	var dateToStr = gantt.date.date_to_str(gantt.config.task_date);
  
 	var id = gantt.addMarker({ 
@@ -96,15 +174,15 @@
 		css: "today", 
 		text: "Now",
 		title:dateToStr(new Date())
-	});
-	setInterval(function(){
-		var today = gantt.getMarker(id);
-		today.start_date = new Date();
-		today.title = date_to_str(today.start_date);
-		gantt.updateMarker(id);
-	}, 1000*60);
+		});
+		// setInterval(function(){
+		// 	var today = gantt.getMarker(id);
+		// 	today.start_date = new Date();
+		// 	today.title = gantt.date.date_to_str(today.start_date);
+		// 	gantt.updateMarker(id);
+		// }, 1000*60);
 
-	// 色
+	// 色をつける
 	gantt.locale.labels.section_barColor = "Color";
 	gantt.locale.labels.section_textColor = "Text Color";
 
@@ -120,16 +198,19 @@
 		{key: "#FF4500", label: "OrangeRed"}
 	];
 
+	// popupウインド
+
 	gantt.config.lightbox.sections = [
 		{name: "description", height: 38, map_to: "text", type: "textarea", focus: true},
-	    {name:"priority", height:22, map_to:"priority", type:"select", options: [ 
-        {key:1, label: "High"},                                               
-        {key:2, label: "Normal"},                                             
-        {key:3, label: "Low"}                                                 
-     	]},
+	    {name: "kind", height:22, map_to:"kind_task", type:"select", options:gantt.serverList("kind_task", [
+			{ key: "1", label: "task" },
+			{ key: "2", label: "pro" },
+			{ key: "3", label: "MS" }
+     	])},
+		{name: "memo", height: 50, map_to: "memo", type: "textarea"},
+		{name: "time", type: "duration", map_to: "auto"},
 		{name: "barColor", height: 22, map_to: "color", type: "select", options: colors},
-		{name: "textColor", height: 22, map_to: "textColor", type: "select", options: colors},
-		{name: "time", type: "duration", map_to: "auto"}
+		{name: "textColor", height: 22, map_to: "textColor", type: "select", options: colors}
 	];
 
 	// 左側欄の設定
@@ -137,40 +218,45 @@
 	var textEditor = {type: "text", map_to: "text"};
 	// var dateEditor = {type: "date", map_to: "start_date", min: new Date(2018, 0, 1), max: new Date(2019, 0, 1)};
 	var durationEditor = {type: "number", map_to: "duration", min:0, max: 100};
-	var priority = {type: "select", map_to: "priority", options:gantt.serverList("priority")};
+	var kind_task = {type: "select", map_to: "kind_task", options:gantt.serverList("kind_task", [
+			{ key: "1", label: "task" },
+			{ key: "2", label: "pro" },
+			{ key: "3", label: "MS" }
+		])};
+
 
 	gantt.config.columns=[
 		{name:"text",       label:"タスク名",  tree:true, width: 300 , editor: textEditor},
 		{name:"start_date", label:"開始", align: "center", width: 80 },
 		{
-			name: "priority", label: "Priority", align: "center", template: function (obj) {
-				if (obj.priority == 1) {
-					return "High"
+		name: "kind_task", label: "種別", align: "center", 
+			template: function (obj) {
+				if (obj.kind_task == 1) {
+					return "task"
 				}
-				if (obj.priority == 2) {
-					return "Medium"
+				if (obj.kind_task == 2) {
+					return "pro"
 				}
-				return "Low"
-			},
-			editor: priority
+					return "MS"
+				},
+		editor: kind_task
 		},
 		{name:"duration",   label:"期間",  align: "center", width: 50 , editor: durationEditor},
 		{name:"add",        label:"" , width: 35 }
 	];
 
-
 	// 色付け
 
 	gantt.templates.task_class = function (start, end, task) {
-		switch (task.priority) {
+		switch (task.kind_task) {
 			case "1":
-				return "high";
+				return "task";
 				break;
 			case "2":
-				return "medium";
+				return "pro";
 				break;
 			case "3":
-				return "low";
+				return "ms";
 				break;
 		}
 	};
@@ -185,36 +271,19 @@
 			{
 				name:"day",
 				scale_height: 60,
-				min_column_width:50,
+				min_column_width:80,
 				scales:[
 					{unit: "month", format: "%F, %Y"},
 					{unit: "day", step: 1, format: "%j %D"}
 				]
 			},
-			// {
-			// 	name:"week",
-			// 	scale_height: 60,
-			// 	min_column_width:30,
-			// 	scales:[
-			// 		{unit: "week", step: 1, format: function (date) {
-			// 			var dateToStr = gantt.date.date_to_str("%d %M");
-			// 			var endDate = gantt.date.add(date, 6, "day");
-			// 			var weekNum = gantt.date.date_to_str("%W")(date);
-			// 			return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
-			// 			// return dateToStr(date) + " - " + dateToStr(endDate);
-			// 		}},
-			// 		// {unit: "day", step: 1, format: "%j"}
-			// 		{unit: "day", step: 1, format: "%j"},
-			// 		{unit: "day", step: 1, format: "%D"}
-			// 	]
-			// },
 			{
 				name:"month",
-				scale_height: 70,
+				scale_height: 60,
 				min_column_width:30,
 				scales:[
 					{unit: "month", format: "%F, %Y"},
-					{unit: "week", format: "Week #%W"},
+					// {unit: "week", format: "Week #%W"},
 					{unit: "day", step: 1, format: "%j"},
 					{unit: "day", step: 1, format: "%D"}
 				]
@@ -222,7 +291,7 @@
 			{
 				name:"quarter",
 				scale_height: 70,
-				min_column_width:33,
+				min_column_width:26,
 				scales:[
 					{unit: "year", step: 1, format: "%Y"},
 					{unit: "month", format: "%F"},
@@ -254,20 +323,12 @@
 		document.querySelector(".gantt_radio[value='" +config.name+ "']").checked = true;
 	})
 
-	// function zoomIn(){
-	// 	gantt.ext.zoom.zoomIn();
-	// }
-	// function zoomOut(){
-	// 	gantt.ext.zoom.zoomOut()
-	// }
-
 	var radios = document.getElementsByName("scale");
 	for (var i = 0; i < radios.length; i++) {
 		radios[i].onclick = function (event) {
 			gantt.ext.zoom.setLevel(event.target.value);
 		};
 	}
-
 
 	// キーボードナビゲーション
 	gantt.message({
@@ -309,17 +370,8 @@
 	gantt.config.sort = true;
 	gantt.config.keyboard_navigation_cells = true;
 
-
-	// 開いた時に展開する
-	gantt.config.open_tree_initially = true;
-
 	// init
 	gantt.init("gantt_here");
-
-
-
-	// 開いたときに開始日でソード
-	gantt.sort("start_date", false);
 
 	// スクロール
 	var scroll_state, click, original_mouse_position;
@@ -385,6 +437,9 @@
 		
 		localStorage[mode] = JSON.stringify(workData);
 	});
+
+	// 開いたときに開始日でソード
+	gantt.sort("start_date",false);
 
 </script>
 

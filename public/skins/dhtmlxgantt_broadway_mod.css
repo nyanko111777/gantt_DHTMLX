@@ -441,7 +441,7 @@
     height: 100%;
     overflow: hidden;
     white-space: nowrap;
-    font-size: 13px
+    font-size: 12px
 }
 
 .gantt_cell_tree {
@@ -534,7 +534,7 @@
 .gantt_tree_content {
     height: 100%;
     color: #000000;
-    font-weight: 700;
+    font-weight: 600;
     white-space: nowrap;
     min-width: 0
 }
@@ -911,8 +911,7 @@ div.dhx_modal_cover {
     color: #000000;
     font-weight: 700;
     top: 0;
-    font-size: 13px;
-    font-size: 14px
+    font-size: 12px;
 }
 
 .gantt_side_content.gantt_left {
@@ -926,7 +925,7 @@ div.dhx_modal_cover {
 }
 
 .gantt_side_content.gantt_link_crossing {
-    bottom: 8.75px;
+    bottom: 3.75px;
     top: auto
 }
 

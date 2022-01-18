@@ -198,7 +198,7 @@
 		{key: "#FF4500", label: "OrangeRed"}
 	];
 
-	// popupウインド
+	// lightboxウインド(追加した時に出てくるpopup)
 
 	gantt.config.lightbox.sections = [
 		{name: "description", height: 38, map_to: "text", type: "textarea", focus: true},
@@ -207,11 +207,26 @@
 			{ key: "2", label: "pro" },
 			{ key: "3", label: "MS" }
      	])},
+		{name: "ToDo", height: 50, map_to: "ToDo", type: "textarea"},
+		{name: "mail", height: 50, map_to: "mail", type: "textarea"},
 		{name: "memo", height: 50, map_to: "memo", type: "textarea"},
 		{name: "time", type: "duration", map_to: "auto"},
 		{name: "barColor", height: 22, map_to: "color", type: "select", options: colors},
 		{name: "textColor", height: 22, map_to: "textColor", type: "select", options: colors}
 	];
+
+	gantt.locale.labels.section_kind = "kind_task"
+	gantt.locale.labels.section_ToDo = "ToDo"
+	gantt.locale.labels.section_mail = "mail"
+	gantt.locale.labels.section_memo = "memo"
+
+	// タスク追加時の初期値の設定
+	// gantt.attachEvent("onTaskCreated", function(task){
+	// 	let today = new Date();
+	// 	task.duration = 3;
+	// 	task.start_date = today;
+	// 	return true;
+	// });
 
 	// 左側欄の設定
 

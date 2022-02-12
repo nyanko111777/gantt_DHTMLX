@@ -78,9 +78,10 @@
 
 <body>
 
+
 <!-- フォーム -->
 <form class="gantt_control">
-	<select onchange=show_owners(this.value)><option value="All">All</option><option value="Default">Default</option><option value="Viola">Viola</option><option value="Margo">Margo</option><option value="Anna">Anna</option></select>
+	<select onchange=show_owners(this.value)><option value="All">All</option><option value="自分" selected>自分</option><option value="待">待</option><option value="サイン取">サイン取</option><option value="他">他</option></select>
 	<select onchange=show_owners_2(this.value)><option value="Default" selected>Default</option><option value="All">All</option><option value="week_ago">week_ago</option></select>
 
 	<!-- 展開と縮める -->
@@ -137,7 +138,6 @@
 	show_owner_2 = selected_owner_2;
 	gantt.render();
 	}
-
 
 	// 休日
 	var holidays = [//USA, DC holidays
@@ -251,8 +251,8 @@
 
 
 	// 左側欄の設定
-	var show_owner = "All";
-	var show_owner_2 = "All";
+	var show_owner = "自分";
+	var show_owner_2 = "Default";
 	// find owner's name, background colour and text colour
 	function find_by_id(owner_id) {
 	for (var i = 0; i < gantt.owners.length; i++){
@@ -262,10 +262,10 @@
 	};
 
 	gantt.owners = [
-	{ key: 0, label: "Default"},
-	{ key: 11, label: "Viola" },
-	{ key: 45, label: "Margo" },
-	{ key: 99, label: "Anna"},
+	{ key: 0, label: "自分"},
+	{ key: 10, label: "待" },
+	{ key: 20, label: "サイン取" },
+	{ key: 30, label: "他"},
 	];
 
 	gantt.kind_task = [
@@ -441,6 +441,7 @@
 
 	// init
 	gantt.init("gantt_here");
+	gantt.load("/data");
 
 	// スクロール
 	var scroll_state, click, original_mouse_position;
@@ -469,43 +470,48 @@
 		}
 	});
 
+	
+	// DBを利用
+	var dp = new gantt.dataProcessor("/data");
+	dp.init(gantt);
+	dp.setTransactionMode("REST");
 
 	// ローカルストレージの利用
-	var initialData = {
-		data: localStorage["task"] ? JSON.parse(localStorage["task"]) : [],
-		links: localStorage["link"] ? JSON.parse(localStorage["link"]) : []
-	}
+	// var initialData = {
+	// 	data: localStorage["task"] ? JSON.parse(localStorage["task"]) : [],
+	// 	links: localStorage["link"] ? JSON.parse(localStorage["link"]) : []
+	// }
 
-	gantt.parse(initialData);
+	// gantt.parse(initialData);
 
-	var dp = gantt.createDataProcessor(function(mode, taskState, data, rowId) {
-		var workData = [];
+	// var dp = gantt.createDataProcessor(function(mode, taskState, data, rowId) {
+	// 	var workData = [];
 
-		if (localStorage[mode]) {
-			workData = JSON.parse(localStorage[mode]);
-		}
+	// 	if (localStorage[mode]) {
+	// 		workData = JSON.parse(localStorage[mode]);
+	// 	}
 
-		switch(taskState) {
-			case "create":
-				workData.push(data);
-			break;
-			case "update":
-				var itemIndex = workData.findIndex(function(entry, index) {
-					return entry.id == rowId;
-				});
-				workData[itemIndex] = data;
-			break;
-			break;
-			case "delete":
-				var itemIndex = workData.findIndex(function(entry, index) {
-					return entry.id == rowId;
-				});
-				workData.splice(itemIndex, 1);
-			break;
-		}
+	// 	switch(taskState) {
+	// 		case "create":
+	// 			workData.push(data);
+	// 		break;
+	// 		case "update":
+	// 			var itemIndex = workData.findIndex(function(entry, index) {
+	// 				return entry.id == rowId;
+	// 			});
+	// 			workData[itemIndex] = data;
+	// 		break;
+	// 		break;
+	// 		case "delete":
+	// 			var itemIndex = workData.findIndex(function(entry, index) {
+	// 				return entry.id == rowId;
+	// 			});
+	// 			workData.splice(itemIndex, 1);
+	// 		break;
+	// 	}
 		
-		localStorage[mode] = JSON.stringify(workData);
-	});
+	// 	localStorage[mode] = JSON.stringify(workData);
+	// });
 
 	// 開いたときに開始日でソード
 	gantt.sort("start_date",false);
@@ -514,14 +520,17 @@
 	gantt.attachEvent("onBeforeTaskDisplay", function (id, task) {
 		if (show_owner == "All") return true;
 		if (((find_by_id (task.owner_id)).label.toLowerCase() == show_owner.toLowerCase())) return true;
-		return false;	
+		return false;
 	});
 
-	var dt = new Date();
+	var bdt = new Date().setDate(new Date().getDate() - 7);
+	var adt = new Date().setDate(new Date().getDate() + 14);
+
 	gantt.attachEvent("onBeforeTaskDisplay", function (id, task) {
 		if (show_owner_2 == "All") return true;
+		// if (show_owner_2 == "Default" && task.progress != 1 &&  task.start_date >= new Date(bdt) &&  task.start_date <= new Date(adt)) return true;
 		if (show_owner_2 == "Default" && task.progress != 1) return true;
-		if (show_owner_2 == "week_ago" &&  new Date() >= dt.setDate(dt.getDate() - 7)) return true;
+		if (show_owner_2 == "week_ago" &&  task.start_date >= new Date(bdt) &&  task.start_date <= new Date(adt)) return true;
 		return false;	
 	});
 

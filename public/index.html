@@ -82,7 +82,8 @@
 <!-- フォーム -->
 <form class="gantt_control">
 	<select onchange=show_owners(this.value)><option value="All">All</option><option value="自分" selected>自分</option><option value="待">待</option><option value="サイン取">サイン取</option><option value="他">他</option></select>
-	<select onchange=show_owners_2(this.value)><option value="Default" selected>Default</option><option value="All">All</option><option value="week_ago">week_ago</option></select>
+	<select onchange=progresses(this.value)><option value="未完了" selected>未完了</option><option value="All">All</option></select>
+	<select onchange=kikans(this.value)><option value="限定期間" selected>限定期間</option><option value="All">All</option></select>
 
 	<!-- 展開と縮める -->
 	<input type="button" value="open all" onclick="window.openAll()" >
@@ -134,10 +135,16 @@
 	gantt.render();
 	}
 
-	function show_owners_2(selected_owner_2){
-	show_owner_2 = selected_owner_2;
+	function progresses(selected_progress){
+	progress = selected_progress;
 	gantt.render();
 	}
+
+	function kikans(selected_kikan){
+	kikan = selected_kikan;
+	gantt.render();
+	}
+
 
 	// 休日
 	var holidays = [//USA, DC holidays
@@ -252,7 +259,9 @@
 
 	// 左側欄の設定
 	var show_owner = "自分";
-	var show_owner_2 = "Default";
+	var progress = "未完了";
+	var kikan = "限定期間";
+
 	// find owner's name, background colour and text colour
 	function find_by_id(owner_id) {
 	for (var i = 0; i < gantt.owners.length; i++){
@@ -523,14 +532,21 @@
 		return false;
 	});
 
-	var bdt = new Date().setDate(new Date().getDate() - 7);
-	var adt = new Date().setDate(new Date().getDate() + 14);
+
 
 	gantt.attachEvent("onBeforeTaskDisplay", function (id, task) {
-		if (show_owner_2 == "All") return true;
+		if (progress == "All") return true;
 		// if (show_owner_2 == "Default" && task.progress != 1 &&  task.start_date >= new Date(bdt) &&  task.start_date <= new Date(adt)) return true;
-		if (show_owner_2 == "Default" && task.progress != 1) return true;
-		if (show_owner_2 == "week_ago" &&  task.start_date >= new Date(bdt) &&  task.start_date <= new Date(adt)) return true;
+		if (progress == "未完了" && task.progress != 1) return true;
+		return false;	
+	});
+
+	// var bdt = new Date().setDate(new Date().getDate() - 30);
+	var adt = new Date().setDate(new Date().getDate() + 30);
+	gantt.attachEvent("onBeforeTaskDisplay", function (id, task) {
+		if (kikan == "All") return true;
+		// if (kikan == "Default" &&  task.start_date >= new Date(bdt) &&  task.start_date <= new Date(adt)) return true;
+		if (kikan == "限定期間" && task.start_date <= new Date(adt)) return true;
 		return false;	
 	});
 

@@ -80,9 +80,15 @@
 
 
 <!-- フォーム -->
+<!-- <input type='button' class="input_export" value='Sort by Order' onclick='gantt.sort("start_date", false);'> -->
 <form class="gantt_control">
+	<label class='searchEl'>タスク検索 <input id='search' type='field' placeholder='Search tasks...' oninput=change_detector() style='width:150px' /></label>
+	<label class='searchEl_2'>プロ検索 <input id='search_2' type='field' placeholder='Search pro...' oninput=change_detector_2() style='width:150px' /></label>
+	<label for="show_owners">所有者</label>
 	<select onchange=show_owners(this.value)><option value="All">All</option><option value="自分" selected>自分</option><option value="待">待</option><option value="サイン取">サイン取</option><option value="他">他</option></select>
+	<label for="progresses">完了か未完了か</label>
 	<select onchange=progresses(this.value)><option value="未完了" selected>未完了</option><option value="All">All</option></select>
+	<label for="kikans">種類</label>
 	<select onchange=kikans(this.value)><option value="限定期間" selected>限定期間</option><option value="All">All</option></select>
 
 	<!-- 展開と縮める -->
@@ -169,21 +175,21 @@
 	}
 
 	// 週末
-	gantt.config.work_time = true; 
-	var weekScaleTemplate = function (date) {
-		var dateToStr = gantt.date.date_to_str("%d %M");
-		var weekNum = gantt.date.date_to_str("(week %W)");
-		var endDate = gantt.date.add(gantt.date.add(date, 1, "week"), -1, "day");
-		return dateToStr(date) + " - " + dateToStr(endDate) + " " + weekNum(date);
-	};
-	gantt.templates.timeline_cell_class = function (task, date) {
-		if (!gantt.isWorkTime(date))
-			return "week_end";
-		return "";
-	};
+	// gantt.config.work_time = true; 
+	// var weekScaleTemplate = function (date) {
+	// 	var dateToStr = gantt.date.date_to_str("%d %M");
+	// 	var weekNum = gantt.date.date_to_str("(week %W)");
+	// 	var endDate = gantt.date.add(gantt.date.add(date, 1, "week"), -1, "day");
+	// 	return dateToStr(date) + " - " + dateToStr(endDate) + " " + weekNum(date);
+	// };
+	// gantt.templates.timeline_cell_class = function (task, date) {
+	// 	if (!gantt.isWorkTime(date))
+	// 		return "week_end";
+	// 	return "";
+	// };
 	// プラグイン
 	gantt.plugins({
-		// keyboard_navigation: true,
+		keyboard_navigation: true,
 		undo: true,
 		marker: true,
 		multiselect: true
@@ -249,12 +255,12 @@
 	gantt.locale.labels.section_memo = "memo"
 
 	// タスク追加時の初期値の設定
-	// gantt.attachEvent("onTaskCreated", function(task){
-	// 	let today = new Date();
-	// 	task.duration = 3;
-	// 	task.start_date = today;
-	// 	return true;
-	// });
+	gantt.attachEvent("onTaskCreated", function(task){
+		let today = new Date();
+		task.duration = 1;
+		task.start_date = today;
+		return true;
+	});
 
 
 	// 左側欄の設定
@@ -290,10 +296,10 @@
 	var kind_task = {type: "select", map_to: "kind_task", options:gantt.serverList("kind_task", kind_task)};
 	var owner_id = {type: "select", map_to: "owner_id", options:gantt.serverList("owner_id", gantt.owners)};
 
-	var textFilter = "<div class='searchEl'>タスク名 <input id='search' type='field' placeholder='Search tasks...' oninput=change_detector() style='width:150px' /></div>";
+	// var textFilter = "<div class='searchEl'>タスク名 <input id='search' type='field' placeholder='Search tasks...' oninput=change_detector() style='width:150px' /></div>";
 
 	gantt.config.columns=[
-		{name: "text", label: textFilter , tree: true, width: 230 , editor: textEditor, resize: true},
+		{name: "text" , tree: true, width: 230 , editor: textEditor, resize: true},
 		{name:"start_date", label:"開始", align: "center", width: 80 },
 		{
 		name: "kind_task", label: "種別", align: "center", 
@@ -522,9 +528,6 @@
 	// 	localStorage[mode] = JSON.stringify(workData);
 	// });
 
-	// 開いたときに開始日でソード
-	gantt.sort("start_date",false);
-
 	// フィルター
 	gantt.attachEvent("onBeforeTaskDisplay", function (id, task) {
 		if (show_owner == "All") return true;
@@ -588,6 +591,49 @@
 
 	change_detector();
 
+	var filter_data_2;
+	var search_box_2 = document.getElementById("search_2");
+	gantt.attachEvent("onDataRender", function(){
+	search_box_2 = document.getElementById("search_2");
+	});  
+
+	function change_detector_2(){
+	filter_data_2 = search_box_2.value;
+	gantt.refreshData();
+	}
+
+	function compare_input_2(id) {
+	// check task's text
+	if (gantt.getTask(id).text.toLowerCase().indexOf(filter_data_2.toLowerCase()) >= 0)
+		return true;
+	}
+
+	function all_parents_check(id){
+		var show_task = false;
+		gantt.eachParent(function(task){
+			if (gantt.getTask(task.id).text.toLowerCase().indexOf(filter_data_2.toLowerCase()) >= 0)
+			show_task = true;
+		}, id)
+		return show_task;
+	}
+
+	gantt.attachEvent("onBeforeTaskDisplay", function (id, task) {
+	if (compare_input_2(id) || all_parents_check(id)) {
+		return true;
+	}
+	return false;
+	});
+
+	change_detector_2();
+
+	// 開いたときに開始日でソード
+	// gantt.sort("start_date",false);
+	// gantt.render()
+	// gantt.attachEvent("onParse", function () {
+	// 	gantt.sort("start_date",false);
+	// });
+	// var nodesSnapshot = document.evaluate('//*[@id="gantt_here"]/div/div[1]/div[1]/div/div/div[1]/div[2]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
+	// nodesSnapshot.snapshotItem(0).click();
 </script>
 
 </body>
